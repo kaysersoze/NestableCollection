@@ -32,8 +32,13 @@ class NestableCollection extends Collection
      *
      * @return mixed NestableCollection
      */
-    public function nest()
+    public function nest($parent_column = null)
     {
+	    if(!empty($parent_column))
+	    {
+		    $this->parentColumn = $parent_column;
+	    }
+
         $parentColumn = $this->parentColumn;
         if (!$parentColumn) {
             return $this;
@@ -47,7 +52,7 @@ class NestableCollection extends Collection
         // Add empty collection to each items.
         $collection = $this->each(function ($item) {
             if (!$item->items) {
-                $item->items = App::make('Illuminate\Support\Collection');
+                $item->items = new BaseCollection();
             }
         });
 
@@ -66,7 +71,7 @@ class NestableCollection extends Collection
         foreach ($collection->items as $key => $item) {
             if ($item->$parentColumn && isset($collection[$item->$parentColumn])) {
                 $collection[$item->$parentColumn]->items->push($item);
-                $keysToDelete[] = $item->id;
+                $keysToDelete[] = $item->getKey();
             }
         }
 
@@ -100,7 +105,7 @@ class NestableCollection extends Collection
                 $item_string = str_repeat($indentChars, $level).$item->$column;
             }
 
-            $flattened[$item->id] = $item_string;
+            $flattened[$item->getKey()] = $item_string;
             if ($item->items) {
                 $this->listsFlattened($column, $item->items, $level + 1, $flattened, $indentChars, ($parent_string) ? $item_string : null);
             }
